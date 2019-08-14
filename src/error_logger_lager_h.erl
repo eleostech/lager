@@ -50,7 +50,14 @@
 -define(LOGFMT(Level, Pid, Fmt, Args),
     case ?SHOULD_LOG(Level) of
         true ->
-            _ = lager:log(Level, Pid, Fmt, Args),
+            LoggedArgs = case application:get_env(lager, error_arg_transformer) of
+                             {ok, undefined} ->
+                                 Args;
+                             {ok, Func} ->
+                                 Func(Args);
+                             _ -> Args
+                         end,
+            _ = lager:log(Level, Pid, Fmt, LoggedArgs),
             ok;
         _ -> ok
     end).
