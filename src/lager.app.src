@@ -55,6 +55,9 @@
             %% decrease from `async_threshold' to async_threshold -
             %% async_threshold_window. This value only applies to the
             %% default sink; extra sinks can supply their own.
-            {async_threshold_window, 5}
+            {async_threshold_window, 5},
+            %% Set to Function to configure an arg transformer
+            %% for error logs.
+            {error_arg_transformer, undefined}
         ]}
  ]}.
