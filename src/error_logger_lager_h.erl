@@ -49,17 +49,19 @@
         _ -> no_log
     end).
 
+error_args_transformed(Args) ->
+    case application:get_env(lager, error_arg_transformer) of
+        {ok, undefined} ->
+            Args;
+        {ok, Func} ->
+            Func(Args);
+        _ -> Args
+    end.
+
 -define(LOGFMT(Sink, Level, Pid, Fmt, Args),
     case ?SHOULD_LOG(Sink, Level) of
         true ->
-            LoggedArgs = case application:get_env(lager, error_arg_transformer) of
-                             {ok, undefined} ->
-                                 Args;
-                             {ok, Func} ->
-                                 Func(Args);
-                             _ -> Args
-                         end,
-            _ = lager:log(Sink, Level, Pid, Fmt, LoggedArgs),
+            _ = lager:log(Sink, Level, Pid, Fmt, error_args_transformed(Args)),
             logged;
         _ -> no_log
     end).
@@ -584,9 +586,12 @@ format_mfa_md([{M, F, A, Props}| _]) when is_list(Props) ->
 format_mfa_md(Other) ->
     {[], io_lib:format("~w", [Other])}.
 
-format_args([], FmtAcc, ArgsAcc) ->
+format_args(Args, FmtAcc, ArgsAcc) ->
+    format_args_(error_args_transformed(Args), FmtAcc, ArgsAcc).
+
+format_args_([], FmtAcc, ArgsAcc) ->
     {string:join(lists:reverse(FmtAcc), ", "), lists:reverse(ArgsAcc)};
-format_args([H|T], FmtAcc, ArgsAcc) ->
+format_args_([H|T], FmtAcc, ArgsAcc) ->
     {Str, _} = lager_trunc_io:print(H, 100),
     format_args(T, ["~s"|FmtAcc], [Str|ArgsAcc]).
 
