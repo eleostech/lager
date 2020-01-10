@@ -401,9 +401,14 @@ format_crash_report(Report, Neighbours) ->
         exit -> "exited";
         _ -> "crashed"
     end,
-    {TruncatedTrace, _} = lager_trunc_io:print(Trace, 3000),
     {Md0 ++ Md, io_lib:format("Process ~w with ~w neighbours ~s with reason: ~s (~p)",
-        [Name, length(Neighbours), Type, ReasonStr, TruncatedTrace])}.
+        [Name, length(Neighbours), Type, ReasonStr, truncate_trace(Trace)])}.
+
+truncate_trace(Trace) ->
+    {TruncatedTrace, _} = lager_trunc_io:print(Trace, 3000),
+    % Remove newlines
+    Stripped = re:replace(TruncatedTrace, "\n", "", [global,{return, list}]),
+    Stripped.
 
 format_offender(Off) ->
     case get_value(mfargs, Off) of
